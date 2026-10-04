@@ -8,5 +8,7 @@ public sealed class RealType : DataType<double>
 
     protected override bool TryParse(string? value, out double parsed) =>
         double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed)
-        && double.IsFinite(parsed);
+        && IsValidValue(parsed);
+
+    protected override bool IsValidValue(double value) => double.IsFinite(value);
 }
