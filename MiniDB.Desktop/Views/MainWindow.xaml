@@ -1,0 +1,7 @@
+<Window x:Class="MiniDB.Desktop.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MiniDB" Height="450" Width="800"
+        WindowStartupLocation="CenterScreen">
+    <Grid />
+</Window>
