@@ -35,7 +35,7 @@ public sealed class Table
         _columns.Add(column);
     }
 
-    /// <summary>Values follow the order of Columns and are parsed into their column types.</summary>
+    
     public Row AddRow(IEnumerable<string> values)
     {
         if (_columns.Count == 0)

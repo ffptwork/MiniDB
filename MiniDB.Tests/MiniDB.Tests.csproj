@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MiniDB.Core\MiniDB.Core.csproj" />
+    <ProjectReference Include="..\MiniDB.Server\MiniDB.Server.csproj" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

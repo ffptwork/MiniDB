@@ -3,7 +3,7 @@ using MiniDB.Core.Models;
 
 namespace MiniDB.Core.Search;
 
-/// <summary>Finds rows matching a pattern in one selected column.</summary>
+
 public sealed class SearchService
 {
     public IReadOnlyList<Row> Search(Table table, string columnName, string pattern)

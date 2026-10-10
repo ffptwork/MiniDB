@@ -1,0 +1,46 @@
+{
+  "Name": "Demo",
+  "Tables": [
+    {
+      "Name": "Items",
+      "Columns": [
+        {
+          "Name": "Id",
+          "DataTypeName": "integer"
+        },
+        {
+          "Name": "Amount",
+          "DataTypeName": "real"
+        },
+        {
+          "Name": "Letter",
+          "DataTypeName": "char"
+        },
+        {
+          "Name": "Text",
+          "DataTypeName": "string"
+        },
+        {
+          "Name": "Color",
+          "DataTypeName": "color"
+        },
+        {
+          "Name": "Interval",
+          "DataTypeName": "colorInvl"
+        }
+      ],
+      "Rows": [
+        {
+          "Values": {
+            "Id": "42",
+            "Amount": "1.5",
+            "Letter": "A",
+            "Text": "",
+            "Color": "RGB(255, 0, 0)",
+            "Interval": "[RGB(10, 20, 30); RGB(100, 120, 150)]"
+          }
+        }
+      ]
+    }
+  ]
+}

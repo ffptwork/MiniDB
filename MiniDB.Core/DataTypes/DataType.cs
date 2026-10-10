@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MiniDB.Core.DataTypes;
 
-/// <summary>Uses one parsing rule for both validation and conversion.</summary>
+
 public abstract class DataType<T> : IDataType where T : notnull
 {
     public abstract string Name { get; }

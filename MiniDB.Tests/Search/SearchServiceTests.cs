@@ -5,7 +5,7 @@ using MiniDB.Core.Search;
 
 namespace MiniDB.Tests.Search;
 
-/// <summary>Tests the individual operation for variant 01: row search by pattern.</summary>
+
 public sealed class SearchServiceTests
 {
     private readonly SearchService _service = new();

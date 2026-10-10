@@ -2,7 +2,7 @@ using MiniDB.Core.Models;
 
 namespace MiniDB.Core.Validation;
 
-/// <summary>Checks stored typed values against the target table schema.</summary>
+
 public sealed class RowValidator
 {
     private readonly TableValidator _tableValidator = new();

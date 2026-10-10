@@ -2,7 +2,7 @@ using MiniDB.Core.Models;
 
 namespace MiniDB.Core.Validation;
 
-/// <summary>Checks a table schema independently of UI and persistence.</summary>
+
 public sealed class TableValidator
 {
     public void Validate(Table table)
