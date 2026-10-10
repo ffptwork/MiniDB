@@ -1,10 +1,4 @@
-var builder = WebApplication.CreateBuilder(args);
+using MiniDB.Server;
 
-builder.Services.AddControllers();
-
-var app = builder.Build();
-
-app.UseHttpsRedirection();
-app.MapControllers();
-
-app.Run();
+var app = ServerApplication.Build(args);
+await app.RunAsync();

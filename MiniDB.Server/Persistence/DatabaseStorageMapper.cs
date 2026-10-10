@@ -1,4 +1,3 @@
-using System.Globalization;
 using MiniDB.Core.DataTypes;
 using MiniDB.Core.Models;
 using MiniDB.Core.Validation;
@@ -29,7 +28,7 @@ internal static class DatabaseStorageMapper
 
                 foreach (var column in table.Columns)
                 {
-                    values.Add(column.Name, FormatValue(types[column.Name], row.GetValue(column.Name)));
+                    values.Add(column.Name, ValueTextFormatter.Format(types[column.Name], row.GetValue(column.Name)));
                 }
 
                 rows.Add(new RowStorageDto { Values = values });
@@ -93,22 +92,4 @@ internal static class DatabaseStorageMapper
         return database;
     }
 
-    private static string FormatValue(IDataType type, object value)
-    {
-        if (!type.ValidateValue(value))
-        {
-            throw new ArgumentException($"Value cannot be stored as '{type.Name}'.", nameof(value));
-        }
-
-        return value switch
-        {
-            int integer => integer.ToString(CultureInfo.InvariantCulture),
-            double real => real.ToString("R", CultureInfo.InvariantCulture),
-            char character => character.ToString(),
-            string text => text,
-            Color color => color.ToString(),
-            ColorInterval interval => interval.ToString(),
-            _ => throw new ArgumentException($"Unsupported stored value type '{value.GetType().Name}'.", nameof(value))
-        };
-    }
 }

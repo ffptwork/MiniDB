@@ -21,6 +21,7 @@ public sealed class DatabaseStorage
     };
 
     private readonly string _rootPath;
+    private readonly SemaphoreSlim _saveGate = new(1, 1);
 
     public DatabaseStorage(string rootStoragePath)
     {
@@ -32,6 +33,19 @@ public sealed class DatabaseStorage
     public async Task SaveAsync(Database database, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(database);
+        await _saveGate.WaitAsync(cancellationToken);
+        try
+        {
+            await SaveFileAsync(database, cancellationToken);
+        }
+        finally
+        {
+            _saveGate.Release();
+        }
+    }
+
+    private async Task SaveFileAsync(Database database, CancellationToken cancellationToken)
+    {
         cancellationToken.ThrowIfCancellationRequested();
         var filePath = GetDatabasePath(database.Name);
         var dto = DatabaseStorageMapper.ToDto(database);
