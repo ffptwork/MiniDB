@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MiniDB.Core\MiniDB.Core.csproj" />
     <ProjectReference Include="..\MiniDB.Server\MiniDB.Server.csproj" />
+    <ProjectReference Include="..\MiniDB.Desktop\MiniDB.Desktop.csproj" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>
