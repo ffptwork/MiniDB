@@ -36,6 +36,8 @@
                     <WrapPanel Grid.Row="1" Margin="0,0,0,10">
                         <Button Content="Створити базу" Click="CreateDatabaseClick" Style="{StaticResource PrimaryButton}" />
                         <Button Content="Видалити базу" Click="DeleteDatabaseClick" IsEnabled="{Binding CanUseDatabase}" Margin="0" />
+                        <Button Content="Імпорт" Click="ImportDatabaseClick" Margin="0,8,8,0" />
+                        <Button Content="Експорт" Click="ExportDatabaseClick" IsEnabled="{Binding CanUseDatabase}" Margin="0,8,0,0" />
                     </WrapPanel>
                     <ListBox x:Name="DatabaseList" Grid.Row="2" ItemsSource="{Binding Databases}" DisplayMemberPath="Name"
                              SelectedItem="{Binding SelectedDatabase, Mode=OneWay}" SelectionChanged="DatabaseSelectionChanged"

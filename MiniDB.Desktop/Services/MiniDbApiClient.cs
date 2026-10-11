@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using MiniDB.Desktop.Models;
 
@@ -39,6 +40,26 @@ public sealed class MiniDbApiClient
     public Task DeleteDatabaseAsync(string name, CancellationToken cancellationToken = default) =>
         DeleteAsync(DatabasePath(name), cancellationToken);
 
+    public async Task<byte[]> ExportDatabaseAsync(string databaseName, CancellationToken cancellationToken = default)
+    {
+        using var response = await SendAsync(HttpMethod.Get, DatabasePath(databaseName) + "/export", null, cancellationToken)
+            .ConfigureAwait(false);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<DatabaseDto> ImportDatabaseAsync(byte[] json, string fileName,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+        using var content = new MultipartFormDataContent();
+        var file = new ByteArrayContent(json);
+        file.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        content.Add(file, "file", fileName);
+        using var response = await SendContentAsync(HttpMethod.Post, "api/databases/import", content, cancellationToken)
+            .ConfigureAwait(false);
+        return await ReadResultAsync<DatabaseDto>(response, cancellationToken).ConfigureAwait(false);
+    }
+
     public Task<TableDto> GetTableAsync(string databaseName, string tableName, CancellationToken cancellationToken = default) =>
         SendForResultAsync<TableDto>(HttpMethod.Get, TablePath(databaseName, tableName), null, cancellationToken);
 
@@ -73,24 +94,27 @@ public sealed class MiniDbApiClient
         CancellationToken cancellationToken)
     {
         using var response = await SendAsync(method, path, body, cancellationToken).ConfigureAwait(false);
-        return await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidDataException("Сервер повернув порожню JSON-відповідь.");
+        return await ReadResultAsync<T>(response, cancellationToken).ConfigureAwait(false);
     }
+
+    private static async Task<T> ReadResultAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken) =>
+        await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken).ConfigureAwait(false)
+        ?? throw new InvalidDataException("Сервер повернув порожню JSON-відповідь.");
 
     private async Task DeleteAsync(string path, CancellationToken cancellationToken)
     {
         using var response = await SendAsync(HttpMethod.Delete, path, null, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body,
+    private Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body,
+        CancellationToken cancellationToken) =>
+        SendContentAsync(method, path, body is null ? null : JsonContent.Create(body, options: JsonOptions), cancellationToken);
+
+    private async Task<HttpResponseMessage> SendContentAsync(HttpMethod method, string path, HttpContent? content,
         CancellationToken cancellationToken)
     {
+        using var request = new HttpRequestMessage(method, path) { Content = content };
         cancellationToken.ThrowIfCancellationRequested();
-        using var request = new HttpRequestMessage(method, path);
-        if (body is not null)
-        {
-            request.Content = JsonContent.Create(body, options: JsonOptions);
-        }
 
         var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
             .ConfigureAwait(false);

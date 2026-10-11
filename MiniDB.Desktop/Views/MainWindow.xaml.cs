@@ -4,6 +4,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using MiniDB.Desktop.Models;
 using MiniDB.Desktop.ViewModels;
+using Microsoft.Win32;
 
 namespace MiniDB.Desktop.Views;
 
@@ -55,6 +56,28 @@ public partial class MainWindow : Window
         new CreateDatabaseWindow(_model, _shutdown.Token) { Owner = this }.ShowDialog();
     private void CreateTableClick(object sender, RoutedEventArgs e) =>
         new CreateTableWindow(_model, _shutdown.Token) { Owner = this }.ShowDialog();
+
+    private async void ExportDatabaseClick(object sender, RoutedEventArgs e)
+    {
+        if (!_model.CanUseDatabase) return;
+        var dialog = new SaveFileDialog
+        {
+            Title = "Експорт бази даних", Filter = "База MiniDB (*.json)|*.json",
+            FileName = _model.SelectedDatabase!.Name + ".json", DefaultExt = ".json", AddExtension = true
+        };
+        if (dialog.ShowDialog(this) == true && await _model.ExportDatabaseAsync(dialog.FileName, _shutdown.Token))
+            MessageBox.Show(this, "Базу успішно експортовано.", "Експорт", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private async void ImportDatabaseClick(object sender, RoutedEventArgs e)
+    {
+        if (!_model.CanInteract) return;
+        var dialog = new OpenFileDialog
+        {
+            Title = "Імпорт бази даних", Filter = "База MiniDB (*.json)|*.json", CheckFileExists = true
+        };
+        if (dialog.ShowDialog(this) == true) await _model.ImportDatabaseAsync(dialog.FileName, _shutdown.Token);
+    }
 
     private async void DeleteDatabaseClick(object sender, RoutedEventArgs e)
     {

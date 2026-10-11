@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using MiniDB.Desktop.Models;
 using MiniDB.Desktop.Services;
 
@@ -72,6 +73,26 @@ public sealed class MainViewModel(MiniDbApiClient api) : ObservableObject
 
     public Task<bool> CreateDatabaseAsync(string name, CancellationToken token = default) =>
         ChangeAsync(() => api.CreateDatabaseAsync(name, token), () => RefreshCoreAsync(name, null, token), token);
+
+    public Task<bool> ExportDatabaseAsync(string filePath, CancellationToken token = default)
+    {
+        if (SelectedDatabase is not { } database) return Task.FromResult(false);
+        return RunAsync(async () =>
+        {
+            var json = await api.ExportDatabaseAsync(database.Name, token);
+            await File.WriteAllBytesAsync(filePath, json, token);
+        }, token);
+    }
+
+    public Task<bool> ImportDatabaseAsync(string filePath, CancellationToken token = default)
+    {
+        DatabaseDto? imported = null;
+        return ChangeAsync(async () =>
+        {
+            var json = await File.ReadAllBytesAsync(filePath, token);
+            imported = await api.ImportDatabaseAsync(json, Path.GetFileName(filePath), token);
+        }, () => RefreshCoreAsync(imported!.Name, null, token), token);
+    }
 
     public Task<bool> DeleteDatabaseAsync(CancellationToken token = default)
     {

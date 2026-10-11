@@ -12,6 +12,7 @@ public static class UserErrorFormatter
         HttpRequestException => "Не вдалося підключитися до сервера. Перевірте, чи сервер запущено та чи правильно задано ApiBaseUrl.",
         OperationCanceledException => "Запит не завершився вчасно. Спробуйте ще раз.",
         JsonException or InvalidDataException => "Сервер повернув некоректну відповідь.",
+        IOException or UnauthorizedAccessException => "Не вдалося прочитати або записати файл. Перевірте шлях і права доступу.",
         _ => "Не вдалося виконати операцію. Спробуйте ще раз."
     };
 

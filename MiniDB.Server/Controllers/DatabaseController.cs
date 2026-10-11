@@ -40,6 +40,45 @@ public sealed class DatabaseController(DatabaseStorage storage) : ControllerBase
         return Ok(ApiMapper.ToResponse(database));
     }
 
+    [HttpGet("{databaseName}/export")]
+    public async Task<IActionResult> Export(string databaseName, CancellationToken cancellationToken)
+    {
+        var json = await storage.ExportAsync(databaseName, cancellationToken);
+        return File(json, "application/json", databaseName + ".json");
+    }
+
+    [HttpPost("import")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<DatabaseResponse>> Import([FromForm] IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file.Length == 0)
+            return BadRequest(new ProblemDetails { Status = 400, Title = "Файл бази даних порожній." });
+
+        Database database;
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            database = await storage.ReadImportAsync(stream, cancellationToken);
+        }
+        catch (InvalidDataException exception)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Status = 400, Title = "Не вдалося імпортувати базу даних.", Detail = exception.Message
+            });
+        }
+
+        if (storage.Exists(database.Name))
+            return Conflict(new ProblemDetails
+            {
+                Status = 409, Title = "База даних вже існує.", Detail = database.Name
+            });
+
+        await storage.SaveAsync(database, cancellationToken);
+        return CreatedAtAction(nameof(Get), new { databaseName = database.Name }, ApiMapper.ToResponse(database));
+    }
+
     [HttpDelete("{databaseName}")]
     public IActionResult Delete(string databaseName)
     {

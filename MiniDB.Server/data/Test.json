@@ -1,0 +1,56 @@
+{
+  "Name": "Test",
+  "Tables": [
+    {
+      "Name": "Person",
+      "Columns": [
+        {
+          "Name": "Id",
+          "DataTypeName": "integer"
+        },
+        {
+          "Name": "Name",
+          "DataTypeName": "string"
+        },
+        {
+          "Name": "Male",
+          "DataTypeName": "char"
+        },
+        {
+          "Name": "finance",
+          "DataTypeName": "real"
+        },
+        {
+          "Name": "HairColor",
+          "DataTypeName": "color"
+        },
+        {
+          "Name": "T-shirtColor",
+          "DataTypeName": "colorInvl"
+        }
+      ],
+      "Rows": [
+        {
+          "Values": {
+            "Id": "232",
+            "Name": "Paul",
+            "Male": "M",
+            "finance": "2400.5",
+            "HairColor": "RGB(200, 142, 34)",
+            "T-shirtColor": "[RGB(200, 142, 34); RGB(200, 242, 54)]"
+          }
+        },
+        {
+          "Values": {
+            "Id": "23",
+            "Name": "Patric",
+            "Male": "M",
+            "finance": "56",
+            "HairColor": "RGB(34, 54, 184)",
+            "T-shirtColor": "[RGB(34, 54, 184); RGB(38, 234, 184)]"
+          }
+        }
+      ]
+    }
+  ]
+}

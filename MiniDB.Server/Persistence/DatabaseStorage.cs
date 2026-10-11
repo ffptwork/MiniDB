@@ -1,18 +1,9 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using MiniDB.Core.Models;
 
 namespace MiniDB.Server.Persistence;
 
 public sealed class DatabaseStorage
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-        AllowDuplicateProperties = false
-    };
-
     private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "CON", "PRN", "AUX", "NUL",
@@ -48,7 +39,6 @@ public sealed class DatabaseStorage
     {
         cancellationToken.ThrowIfCancellationRequested();
         var filePath = GetDatabasePath(database.Name);
-        var dto = DatabaseStorageMapper.ToDto(database);
         var temporaryPath = Path.Combine(_rootPath, $".{Guid.NewGuid():N}.tmp");
 
         try
@@ -56,7 +46,7 @@ public sealed class DatabaseStorage
             await using (var stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write,
                 FileShare.None, 81920, FileOptions.Asynchronous))
             {
-                await JsonSerializer.SerializeAsync(stream, dto, JsonOptions, cancellationToken);
+                await DatabaseJson.WriteAsync(stream, database, cancellationToken);
                 await stream.FlushAsync(cancellationToken);
                 stream.Flush(flushToDisk: true);
             }
@@ -81,24 +71,32 @@ public sealed class DatabaseStorage
 
         try
         {
-            var dto = await JsonSerializer.DeserializeAsync<DatabaseStorageDto>(stream, JsonOptions, cancellationToken)
-                ?? throw new JsonException("The database document must not be null.");
-
-            if (!string.Equals(dto.Name, databaseName, StringComparison.Ordinal))
+            var database = await DatabaseJson.ReadAsync(stream, cancellationToken);
+            if (!string.Equals(database.Name, databaseName, StringComparison.Ordinal))
             {
                 throw new ArgumentException("The database name in JSON must match its file name.");
             }
 
-            return DatabaseStorageMapper.FromDto(dto);
+            return database;
         }
-        catch (Exception exception) when (exception is JsonException or ArgumentException or FormatException
-            or InvalidOperationException or KeyNotFoundException)
+        catch (Exception exception) when (exception is InvalidDataException or ArgumentException)
         {
             throw new InvalidDataException($"Invalid database file '{filePath}': {exception.Message}", exception);
         }
     }
 
     public bool Exists(string databaseName) => File.Exists(GetDatabasePath(databaseName));
+
+    public async Task<byte[]> ExportAsync(string databaseName, CancellationToken cancellationToken = default)
+    {
+        var database = await LoadAsync(databaseName, cancellationToken);
+        using var stream = new MemoryStream();
+        await DatabaseJson.WriteAsync(stream, database, cancellationToken);
+        return stream.ToArray();
+    }
+
+    public Task<Database> ReadImportAsync(Stream stream, CancellationToken cancellationToken = default) =>
+        DatabaseJson.ReadAsync(stream, cancellationToken);
 
     public bool Delete(string databaseName)
     {
@@ -113,7 +111,7 @@ public sealed class DatabaseStorage
         return true;
     }
 
-    /// <summary>Loads every database in name order; invalid files are reported, not skipped.</summary>
+
     public async Task<IReadOnlyList<Database>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
