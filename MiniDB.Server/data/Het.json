@@ -1,0 +1,15 @@
+{
+  "Name": "Het",
+  "Tables": [
+    {
+      "Name": "hdd",
+      "Columns": [
+        {
+          "Name": "Id",
+          "DataTypeName": "integer"
+        }
+      ],
+      "Rows": []
+    }
+  ]
+}

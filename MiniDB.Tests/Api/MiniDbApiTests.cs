@@ -8,6 +8,16 @@ namespace MiniDB.Tests.Api;
 public sealed class MiniDbApiTests : ApiTestBase
 {
     [Fact]
+    public async Task Health_ReturnsOkWithoutRedirect()
+    {
+        using var response = await Client.GetAsync("/health");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("ok", (await ReadAsync<Dictionary<string, string>>(response))["status"]);
+        Assert.Null(response.Headers.Location);
+    }
+
+    [Fact]
     public async Task CreateDatabaseAndTable_PersistsThroughRest()
     {
         await CreateTableAsync();

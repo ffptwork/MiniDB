@@ -15,6 +15,14 @@ public static class ServerApplication
             ApplicationName = typeof(ServerApplication).Assembly.GetName().Name
         });
 
+        var port = Environment.GetEnvironmentVariable("PORT");
+        if (!string.IsNullOrWhiteSpace(port) && string.IsNullOrWhiteSpace(builder.Configuration["urls"]))
+        {
+            if (!int.TryParse(port, out var number) || number is < 1 or > 65535)
+                throw new InvalidOperationException("PORT має бути числом від 1 до 65535.");
+            builder.WebHost.UseUrls($"http://0.0.0.0:{number}");
+        }
+
         builder.Services.AddControllers();
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
@@ -32,9 +40,9 @@ public static class ServerApplication
 
         var app = builder.Build();
         app.UseExceptionHandler();
-        app.UseHttpsRedirection();
         app.UseMiddleware<DatabaseMutationMiddleware>();
         app.MapControllers();
+        app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
         return app;
     }
 }

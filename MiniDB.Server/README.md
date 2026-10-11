@@ -11,3 +11,16 @@ HTTP-контракти містяться в `Contracts`, файлові DTO �
 Помилки повертаються у форматі ProblemDetails: 400 для некоректних даних, 404 для відсутніх об'єктів, 409 для дублікатів. Деталі внутрішніх помилок залишаються в журналі сервера. Паралельні зміни виконуються по черзі в межах одного процесу.
 
 Запуск із кореня проєкту: `.\dotnet.ps1 run --project MiniDB.Server`. Локальна HTTPS-адреса — `https://localhost:7143/api/databases`.
+
+Dockerfile у корені збирає тільки Server і Core. Desktop, Tests, локальні бази та `.tools` виключені через .dockerignore. Збірка: `docker build -t minidb-server .`.
+
+Приклад запуску в PowerShell із локальним сховищем:
+
+```powershell
+$storage = (New-Item -ItemType Directory -Path .tools/docker-data -Force).FullName
+docker run --name minidb-local -d -p 8080:8080 -e PORT=8080 -e ASPNETCORE_URLS=http://+:8080 -e Storage__Path=/app/data --mount "type=bind,source=$storage,target=/app/data" minidb-server
+```
+
+`GET http://localhost:8080/health` повертає `{"status":"ok"}`. Для перевірки persistence зупиніть контейнер командою `docker stop minidb-local` і запустіть новий із іншим ім'ям та тим самим `$storage`.
+
+Для Railway потрібні Volume у `/app/data`, змінна `Storage__Path=/app/data` і healthcheck `/health`. Сервер читає `PORT` та слухає `0.0.0.0`; явний `ASPNETCORE_URLS` або `--urls` має пріоритет. Без PORT локальні адреси не змінюються. HTTP усередині контейнера не перенаправляється на HTTPS: TLS забезпечує зовнішній proxy, а локальний HTTPS-профіль залишається доступним. Deployment на цьому етапі не виконується.

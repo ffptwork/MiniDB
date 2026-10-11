@@ -51,6 +51,39 @@
           }
         }
       ]
+    },
+    {
+      "Name": "Animal",
+      "Columns": [
+        {
+          "Name": "Id",
+          "DataTypeName": "integer"
+        },
+        {
+          "Name": "Name",
+          "DataTypeName": "string"
+        },
+        {
+          "Name": "Type",
+          "DataTypeName": "string"
+        }
+      ],
+      "Rows": [
+        {
+          "Values": {
+            "Id": "43",
+            "Name": "Rex",
+            "Type": "Sobaka"
+          }
+        },
+        {
+          "Values": {
+            "Id": "1",
+            "Name": "Tim",
+            "Type": "Kit"
+          }
+        }
+      ]
     }
   ]
 }
