@@ -1,13 +1,13 @@
 # MiniDB.Desktop
 
-Клієнт на WPF для Windows. `MiniDbApiClient` у Services виконує REST-запити до сервера. DTO містяться в Models; посилання на серверний проєкт немає. Вікно залишається базовим, без роботи з таблицями.
+Клієнт на WPF для Windows. Зліва обираються бази й таблиці, справа показуються схема та дані. Створення бази, таблиці, додавання й редагування рядка виконуються в діалогових вікнах. Пошук за шаблоном розташований над таблицею; «Скинути» повертає всі рядки. Зміни сервер зберігає автоматично.
 
-Адреса задається при створенні `HttpClient` і має завершуватися `/`. Наприклад, для локальної розробки:
+Адреса сервера задається в `appsettings.json` і має завершуватися `/`:
 
-```csharp
-using var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5143/") };
-var api = new MiniDbApiClient(httpClient);
-var databases = await api.GetDatabasesAsync();
+```json
+{ "ApiBaseUrl": "http://localhost:5143/" }
 ```
 
-Клієнт використовує переданий HttpClient; його життєвим циклом керує викликач. API-помилки повертаються як `ApiException` з HTTP-статусом, Title, Detail та Errors. Скасування запиту і мережеві помилки передаються викликачу. Діалогові вікна сервіс не відкриває.
+App створює один HttpClient і MiniDbApiClient на весь час роботи. Views містять вікна, ViewModels — стан і логіку інтерфейсу, Models — власні HTTP DTO, Services — клієнт API та допоміжні класи. Посилань на Core або Server немає. Перевірки типів і пошук виконує сервер; помилки показуються в інтерфейсі без stack trace.
+
+Запуск із кореня: `.\dotnet.ps1 run --project MiniDB.Desktop`. Спочатку потрібно запустити MiniDB.Server.

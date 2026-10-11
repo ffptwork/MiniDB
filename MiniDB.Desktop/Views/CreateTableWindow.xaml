@@ -1,0 +1,42 @@
+<Window x:Class="MiniDB.Desktop.Views.CreateTableWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:MiniDB.Desktop.ViewModels"
+        Style="{StaticResource {x:Type Window}}" Title="Створити таблицю" Width="680" Height="580" MinWidth="580" MinHeight="460" WindowStartupLocation="CenterOwner">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+            <RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Text="Нова таблиця" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,18" />
+        <StackPanel Grid.Row="1" Margin="0,0,0,16">
+            <TextBlock Text="Назва таблиці" Margin="0,0,0,6" />
+            <TextBox x:Name="NameBox" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <StackPanel x:Name="ColumnButtons" Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+            <Button Content="Додати колонку" Click="AddColumnClick" />
+            <Button Content="Видалити колонку" Click="RemoveColumnClick" />
+        </StackPanel>
+        <DataGrid x:Name="ColumnsGrid" Grid.Row="3" ItemsSource="{Binding Columns}" AutoGenerateColumns="False"
+                  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Назва колонки" Width="*" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                <DataGridTemplateColumn Header="Тип даних" Width="200">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{x:Static vm:CreateTableViewModel.DataTypeNames}" SelectedItem="{Binding DataTypeName, UpdateSourceTrigger=PropertyChanged}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        <StackPanel Grid.Row="4" Margin="0,12,0,0">
+            <TextBlock x:Name="ErrorText" Foreground="#B91C1C" TextWrapping="Wrap" />
+            <TextBlock x:Name="BusyText" Foreground="#64748B" />
+        </StackPanel>
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+            <Button x:Name="SaveButton" Content="Створити" Click="SaveClick" Style="{StaticResource PrimaryButton}" />
+            <Button x:Name="CancelButton" Content="Скасувати" IsCancel="True" Margin="0" />
+        </StackPanel>
+    </Grid>
+</Window>

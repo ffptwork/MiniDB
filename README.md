@@ -4,17 +4,19 @@
 
 - **MiniDB.Core** — моделі, типи даних, перевірки та пошук.
 - **MiniDB.Server** — REST API та зберігання баз у JSON.
-- **MiniDB.Desktop** — WPF-клієнт із сервісом доступу до REST API.
-- **MiniDB.Tests** — тести ядра, файлового сховища, HTTP API та desktop API-клієнта.
+- **MiniDB.Desktop** — WPF-інтерфейс для роботи з базами, таблицями, рядками та пошуком через REST API.
+- **MiniDB.Tests** — тести ядра, файлового сховища, HTTP API, desktop API-клієнта та ViewModels.
 
-Клієнт працюватиме із сервером через HTTPS/REST. Сервер використовує Core; ядро не залежить від інтерфейсу чи файлового сховища. Вебклієнт на Blazor заплановано для етапу 3.
+Клієнт працює із сервером через HTTP/HTTPS REST. Сервер використовує Core; ядро не залежить від інтерфейсу чи файлового сховища. Вебклієнт на Blazor заплановано для етапу 3.
 
 Для повної збірки потрібні Windows і .NET 10 SDK. Поки SDK зберігається локально в `.tools`, команди з кореня проєкту такі:
 
 ```powershell
 .\dotnet.ps1 build MiniDB.sln
-.\dotnet.ps1 test MiniDB.Tests\MiniDB.Tests.csproj
+.\dotnet.ps1 test MiniDB.sln
 ```
+
+Для локальної роботи запустіть `.\dotnet.ps1 run --project MiniDB.Server --no-launch-profile -- --urls http://localhost:5143`, потім в іншому терміналі `.\dotnet.ps1 run --project MiniDB.Desktop`. Адреса сервера задається в `MiniDB.Desktop/appsettings.json`, локально — `http://localhost:5143/`.
 
 Після встановлення системного .NET 10 можна користуватися звичайними командами `dotnet`.
 
