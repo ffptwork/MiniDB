@@ -1,0 +1,57 @@
+@using MiniDB.Web.Models
+@using MiniDB.Web.Services
+
+<ModalDialog Title="@(Row is null ? "Додати рядок" : "Редагувати рядок")" Size="modal-lg" Busy="@Busy" OnClose="OnClose">
+    <form @onsubmit="Submit" @onsubmit:preventDefault>
+        <fieldset disabled="@Busy">
+            <div class="modal-body">
+                @if (Error is not null) { <ApiError Message="@Error" Exception="@ApiError" /> }
+                @for (var index = 0; index < _fields.Count; index++)
+                {
+                    var field = _fields[index];
+                    var id = $"row-value-{index}";
+                    <div class="mb-3" @key="field.Column.Name">
+                        <label for="@id" class="form-label">@field.Column.Name <span class="badge text-bg-secondary">@field.Column.DataTypeName</span></label>
+                        <input id="@id" class="form-control" @bind="field.Value" @bind:event="oninput" />
+                        @if (Hint(field.Column.DataTypeName) is { } hint) { <div class="form-text">@hint</div> }
+                    </div>
+                }
+                <p class="form-text mb-0">Значення перевіряються сервером. Для string дозволений порожній рядок.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="OnClose">Скасувати</button>
+                <button type="submit" class="btn btn-primary">@(Busy ? "Завантаження..." : "Зберегти")</button>
+            </div>
+        </fieldset>
+    </form>
+</ModalDialog>
+
+@code {
+    [Parameter, EditorRequired] public TableDto Table { get; set; } = null!;
+    [Parameter] public RowDto? Row { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public ApiException? ApiError { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public EventCallback<Dictionary<string, string>> OnSave { get; set; }
+    private List<Field> _fields = [];
+
+    protected override void OnInitialized() =>
+        _fields = Table.Columns.Select(column => new Field(column, Row?.Values.GetValueOrDefault(column.Name) ?? string.Empty)).ToList();
+
+    private Task Submit() => OnSave.InvokeAsync(_fields.ToDictionary(field => field.Column.Name, field => field.Value, StringComparer.Ordinal));
+
+    private static string? Hint(string type) => type switch
+    {
+        "color" => "RGB(255, 0, 0)",
+        "colorInvl" => "[RGB(10, 20, 30); RGB(100, 120, 150)]",
+        "real" => "Десятковий роздільник — крапка, наприклад 4.5.",
+        _ => null
+    };
+
+    private sealed class Field(ColumnDto column, string value)
+    {
+        public ColumnDto Column { get; } = column;
+        public string Value { get; set; } = value;
+    }
+}

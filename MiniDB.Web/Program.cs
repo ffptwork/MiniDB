@@ -11,5 +11,6 @@ var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
     ?? throw new InvalidOperationException("Не задано ApiBaseUrl у wwwroot/appsettings.json.");
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(apiBaseUrl, UriKind.Absolute) });
 builder.Services.AddScoped<MiniDbApiClient>();
+builder.Services.AddScoped<FileDownloadService>();
 
 await builder.Build().RunAsync();

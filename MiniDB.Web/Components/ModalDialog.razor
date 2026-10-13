@@ -1,0 +1,30 @@
+<div class="modal-backdrop fade show"></div>
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="dialog-title"
+     @ref="_element" @onkeydown="HandleKey">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable @Size">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="dialog-title">@Title</h2>
+                <button type="button" class="btn-close" aria-label="Закрити" disabled="@Busy" @onclick="OnClose"></button>
+            </div>
+            @ChildContent
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Size { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private ElementReference _element;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await _element.FocusAsync();
+    }
+
+    private Task HandleKey(KeyboardEventArgs args) =>
+        args.Key == "Escape" && !Busy ? OnClose.InvokeAsync() : Task.CompletedTask;
+}

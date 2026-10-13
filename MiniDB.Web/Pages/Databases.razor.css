@@ -1,0 +1,10 @@
+.workspace { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 1.5rem; }
+.workspace-main, .workspace-sidebar { min-width: 0; }
+.selection-list { max-height: 280px; overflow-y: auto; }
+.selection-list button { overflow-wrap: anywhere; }
+.schema-column { padding: .35rem .6rem; background: #f4f6f8; border-radius: .35rem; }
+.import-button { position: relative; overflow: hidden; }
+.import-button ::deep .transfer-input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.workspace-main ::deep .data-value { min-width: 100px; max-width: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 991px) { .workspace { grid-template-columns: 1fr; } .workspace-sidebar { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; } }
+@media (max-width: 575px) { .workspace-sidebar { display: block; } }

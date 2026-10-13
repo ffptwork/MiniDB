@@ -1,0 +1,21 @@
+@using MiniDB.Web.Services
+
+<ModalDialog Title="Підтвердження видалення" Busy="@Busy" OnClose="OnClose">
+    <div class="modal-body">
+        @if (Error is not null) { <ApiError Message="@Error" Exception="@ApiError" /> }
+        <p class="mb-0">@Message</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" disabled="@Busy" @onclick="OnClose">Скасувати</button>
+        <button type="button" class="btn btn-danger" disabled="@Busy" @onclick="OnConfirm">@(Busy ? "Завантаження..." : "Видалити")</button>
+    </div>
+</ModalDialog>
+
+@code {
+    [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public ApiException? ApiError { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}

@@ -1,0 +1,57 @@
+@using MiniDB.Web.Models
+@using MiniDB.Web.Services
+
+<ModalDialog Title="Створити таблицю" Size="modal-lg" Busy="@Busy" OnClose="OnClose">
+    <form @onsubmit="Submit" @onsubmit:preventDefault>
+        <fieldset disabled="@Busy">
+            <div class="modal-body">
+                @if (Error is not null) { <ApiError Message="@Error" Exception="@ApiError" /> }
+                <label for="table-name" class="form-label">Назва таблиці</label>
+                <input id="table-name" class="form-control mb-3" @bind="_name" required />
+                <h3 class="fs-6">Колонки</h3>
+                @foreach (var column in _columns)
+                {
+                    <div class="row g-2 mb-2 align-items-center" @key="column">
+                        <div class="col-6">
+                            <input class="form-control" aria-label="Назва колонки" placeholder="Назва колонки" @bind="column.Name" required />
+                        </div>
+                        <div class="col-4">
+                            <select class="form-select" aria-label="Тип колонки" @bind="column.DataTypeName">
+                                @foreach (var type in Types) { <option value="@type">@type</option> }
+                            </select>
+                        </div>
+                        <div class="col-2">
+                            <button type="button" class="btn btn-outline-danger btn-sm" aria-label="Видалити колонку"
+                                    @onclick="() => _columns.Remove(column)">×</button>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => _columns.Add(new())">Додати колонку</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="OnClose">Скасувати</button>
+                <button type="submit" class="btn btn-primary">@(Busy ? "Завантаження..." : "Створити")</button>
+            </div>
+        </fieldset>
+    </form>
+</ModalDialog>
+
+@code {
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public ApiException? ApiError { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public EventCallback<CreateTableRequest> OnSave { get; set; }
+    private static readonly string[] Types = ["integer", "real", "char", "string", "color", "colorInvl"];
+    private readonly List<ColumnDraft> _columns = [new()];
+    private string _name = string.Empty;
+
+    private Task Submit() => OnSave.InvokeAsync(new(_name.Trim(),
+        _columns.Select(column => new ColumnRequest(column.Name.Trim(), column.DataTypeName)).ToArray()));
+
+    private sealed class ColumnDraft
+    {
+        public string Name { get; set; } = string.Empty;
+        public string DataTypeName { get; set; } = "string";
+    }
+}

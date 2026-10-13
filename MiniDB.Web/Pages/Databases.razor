@@ -1,76 +1,229 @@
 @page "/databases"
 @implements IDisposable
-@using System.Text.Json
 @using MiniDB.Web.Models
 @using MiniDB.Web.Services
 @using MiniDB.Web.Components
+@using Microsoft.JSInterop
 @inject MiniDbApiClient Api
+@inject FileDownloadService Downloads
 
 <PageTitle>Бази даних — MiniDB</PageTitle>
-<h1>Бази даних</h1>
 
-@if (_loading)
-{
-    <p role="status">Завантаження...</p>
-}
-else if (_error is not null)
-{
-    <ApiError Message="@_error" Exception="@_apiError" />
-}
-else if (_databases.Count == 0)
-{
-    <p>На сервері ще немає баз даних.</p>
-}
-else
-{
-    <ul class="list-group">
-        @foreach (var database in _databases)
+<div class="workspace" inert="@(_dialog == Dialog.None ? null : string.Empty)" aria-busy="@_state.IsBusy">
+    <aside class="workspace-sidebar">
+        <section class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h1 class="fs-5 mb-0">Бази даних</h1>
+                <button class="btn btn-outline-secondary btn-sm" disabled="@_state.IsBusy" @onclick="Refresh">Оновити</button>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap mb-2">
+                    <button class="btn btn-primary btn-sm" disabled="@_state.IsBusy" @onclick="() => Open(Dialog.CreateDatabase)">Створити базу</button>
+                    <button class="btn btn-outline-danger btn-sm" disabled="@(_state.IsBusy || _state.Database is null)" @onclick="() => Open(Dialog.DeleteDatabase)">Видалити базу</button>
+                </div>
+                <div class="d-flex gap-2 mb-3">
+                    <label class="btn btn-outline-secondary btn-sm import-button mb-0 @(_state.IsBusy ? "disabled" : "")">
+                        Імпорт
+                        <InputFile @key="_importVersion" class="transfer-input" accept=".json,application/json" OnChange="Import" disabled="@_state.IsBusy" aria-label="Імпорт JSON-файлу" />
+                    </label>
+                    <button class="btn btn-outline-secondary btn-sm" disabled="@(_state.IsBusy || _state.Database is null)" @onclick="Export">Експорт</button>
+                </div>
+                <p class="small text-muted">Імпорт JSON до 10 МіБ.</p>
+                <div class="list-group selection-list">
+                    @foreach (var database in _state.Databases)
+                    {
+                        <button class="list-group-item list-group-item-action @(_state.Database?.Name == database.Name ? "active" : "")"
+                                disabled="@_state.IsBusy" @onclick="() => SelectDatabase(database.Name)">@database.Name</button>
+                    }
+                </div>
+                @if (_state.Databases.Count == 0 && !_state.IsBusy) { <p class="text-muted mb-0">Баз даних ще немає.</p> }
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-header"><h2 class="fs-5 mb-0">Таблиці</h2></div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap mb-3">
+                    <button class="btn btn-primary btn-sm" disabled="@(_state.IsBusy || _state.Database is null)" @onclick="() => Open(Dialog.CreateTable)">Створити таблицю</button>
+                    <button class="btn btn-outline-danger btn-sm" disabled="@(_state.IsBusy || _state.Table is null)" @onclick="() => Open(Dialog.DeleteTable)">Видалити таблицю</button>
+                </div>
+                <div class="list-group selection-list">
+                    @foreach (var table in _state.Database?.Tables ?? [])
+                    {
+                        <button class="list-group-item list-group-item-action @(_state.Table?.Name == table.Name ? "active" : "")"
+                                disabled="@_state.IsBusy" @onclick="() => SelectTable(table.Name)">@table.Name</button>
+                    }
+                </div>
+                @if (_state.Database is null) { <p class="text-muted mb-0">Виберіть базу даних.</p> }
+                else if (_state.Database.Tables.Count == 0) { <p class="text-muted mb-0">У базі ще немає таблиць.</p> }
+            </div>
+        </section>
+    </aside>
+
+    <div class="workspace-main">
+        @if (_state.IsBusy) { <div class="alert alert-info" role="status">Завантаження...</div> }
+        @if (_dialog == Dialog.None && _state.Error is not null) { <ApiError Message="@_state.Error" Exception="@_state.ApiError" /> }
+        @if (_notice is not null) { <div class="alert alert-success" role="status">@_notice</div> }
+        @if (_state.Database is { } selectedDatabase)
         {
-            <li class="list-group-item" @key="database.Name">@database.Name</li>
+            <h2 class="fs-4">@selectedDatabase.Name</h2>
+            @if (_state.Table is { } selectedTable)
+            {
+                <section class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                        <h3 class="fs-5 mb-0">@selectedTable.Name</h3>
+                        <button class="btn btn-primary btn-sm" disabled="@_state.IsBusy" @onclick="() => OpenRow(null)">Додати рядок</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2 flex-wrap mb-4" aria-label="Схема таблиці">
+                            @foreach (var column in selectedTable.Columns)
+                            {
+                                <span class="schema-column">@column.Name <span class="badge text-bg-secondary">@column.DataTypeName</span></span>
+                            }
+                        </div>
+                        <h4 class="fs-6">Пошук за шаблоном</h4>
+                        <form @onsubmit="Search" @onsubmit:preventDefault>
+                            <fieldset disabled="@_state.IsBusy">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-sm-4 col-xl-3">
+                                        <label for="search-column" class="form-label">Колонка</label>
+                                        <select id="search-column" class="form-select" @bind="_state.ColumnName">
+                                            @foreach (var column in selectedTable.Columns) { <option value="@column.Name">@column.Name</option> }
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-8 col-xl-6">
+                                        <label for="search-pattern" class="form-label">Шаблон</label>
+                                        <input id="search-pattern" class="form-control" @bind="_state.Pattern" @bind:event="oninput" />
+                                    </div>
+                                    <div class="col-sm-12 col-xl-3 d-flex gap-2 flex-wrap">
+                                        <button type="submit" class="btn btn-primary">Пошук</button>
+                                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetSearch">Скинути</button>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </form>
+                        <p class="form-text">@SearchHint</p>
+                        <p class="small text-muted mb-2">@(_state.IsFiltered ? "Знайдено" : "Рядків"): @_state.Rows.Count</p>
+                        <DataTable Table="@selectedTable" Rows="@_state.Rows" Busy="@_state.IsBusy" OnEdit="OpenRow" />
+                    </div>
+                </section>
+            }
+            else { <div class="card card-body text-muted">Виберіть таблицю або створіть нову.</div> }
         }
-    </ul>
+        else { <div class="card card-body text-muted">Виберіть базу даних, щоб переглянути її таблиці.</div> }
+    </div>
+</div>
+
+@switch (_dialog)
+{
+    case Dialog.CreateDatabase:
+        <CreateDatabaseDialog Busy="@_state.IsBusy" Error="@_state.Error" ApiError="@_state.ApiError" OnClose="Close" OnSave="CreateDatabase" />
+        break;
+    case Dialog.CreateTable:
+        <CreateTableDialog Busy="@_state.IsBusy" Error="@_state.Error" ApiError="@_state.ApiError" OnClose="Close" OnSave="CreateTable" />
+        break;
+    case Dialog.Row:
+        <RowEditorDialog Table="@(_state.Table!)" Row="@_editingRow" Busy="@_state.IsBusy" Error="@_state.Error" ApiError="@_state.ApiError" OnClose="Close" OnSave="SaveRow" />
+        break;
+    case Dialog.DeleteDatabase:
+    case Dialog.DeleteTable:
+        <ConfirmDeleteDialog Message="@DeleteMessage" Busy="@_state.IsBusy" Error="@_state.Error" ApiError="@_state.ApiError" OnClose="Close" OnConfirm="Delete" />
+        break;
 }
 
 @code {
+    private const long MaxImportSize = 10 * 1024 * 1024;
     private readonly CancellationTokenSource _cancellation = new();
-    private IReadOnlyList<DatabaseDto> _databases = [];
-    private bool _loading = true;
-    private string? _error;
-    private ApiException? _apiError;
+    private DatabaseWorkspace _state = null!;
+    private Dialog _dialog;
+    private RowDto? _editingRow;
+    private int _importVersion;
+    private string? _notice;
+    private CancellationToken Token => _cancellation.Token;
+    private string DeleteMessage => _dialog == Dialog.DeleteDatabase
+        ? $"Видалити базу «{_state.Database?.Name}» разом з усіма таблицями?"
+        : $"Видалити таблицю «{_state.Table?.Name}» разом з усіма рядками?";
+    private string SearchHint => _state.Table?.Columns.FirstOrDefault(column => column.Name == _state.ColumnName)?.DataTypeName is "string" or "char"
+        ? "* — будь-яка послідовність символів. Приклади: Dan*, *test*, *. Пошук регістрозалежний."
+        : "Введіть точне значення вибраного типу. Для real десятковий роздільник — крапка.";
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            _databases = await Api.GetDatabasesAsync(_cancellation.Token);
-        }
-        catch (OperationCanceledException) when (_cancellation.IsCancellationRequested) { }
-        catch (ApiException exception)
-        {
-            _apiError = exception;
-            _error = exception.Title;
-        }
-        catch (HttpRequestException)
-        {
-            _error = "Не вдалося підключитися до сервера. Перевірте з'єднання та доступність API.";
-        }
-        catch (OperationCanceledException)
-        {
-            _error = "Сервер не відповів вчасно. Спробуйте оновити сторінку.";
-        }
-        catch (Exception exception) when (exception is JsonException or InvalidDataException)
-        {
-            _error = "Сервер повернув некоректну відповідь.";
-        }
-        finally
-        {
-            _loading = false;
-        }
+        _state = new DatabaseWorkspace(Api);
+        await _state.RefreshAsync(Token);
     }
 
-    public void Dispose()
+    private void Open(Dialog dialog)
     {
-        _cancellation.Cancel();
-        _cancellation.Dispose();
+        if (_state.IsBusy) return;
+        _state.ClearError();
+        _notice = null;
+        _dialog = dialog;
     }
+
+    private void OpenRow(RowDto? row) { _editingRow = row; Open(Dialog.Row); }
+    private void Close() { if (!_state.IsBusy) { _dialog = Dialog.None; _state.ClearError(); } }
+    private async Task Refresh() { _notice = null; await _state.RefreshAsync(Token); }
+    private async Task SelectDatabase(string name) { _notice = null; await _state.SelectDatabaseAsync(name, Token); }
+    private async Task SelectTable(string name) { _notice = null; await _state.SelectTableAsync(name, Token); }
+    private async Task Search() { _notice = null; await _state.SearchAsync(Token); }
+    private async Task ResetSearch() { _notice = null; await _state.ResetSearchAsync(Token); }
+
+    private async Task CreateDatabase(string name)
+    {
+        if (await _state.CreateDatabaseAsync(name, Token)) _dialog = Dialog.None;
+    }
+
+    private async Task CreateTable(CreateTableRequest request)
+    {
+        if (await _state.CreateTableAsync(request, Token)) _dialog = Dialog.None;
+    }
+
+    private async Task SaveRow(Dictionary<string, string> values)
+    {
+        if (await _state.SaveRowAsync(_editingRow, values, Token)) _dialog = Dialog.None;
+    }
+
+    private async Task Delete()
+    {
+        var success = _dialog == Dialog.DeleteDatabase
+            ? await _state.DeleteDatabaseAsync(Token) : await _state.DeleteTableAsync(Token);
+        if (success) _dialog = Dialog.None;
+    }
+
+    private async Task Export()
+    {
+        _notice = null;
+        try
+        {
+            if (await _state.RunAsync(async () =>
+            {
+                var name = _state.Database!.Name;
+                var json = await Api.ExportDatabaseAsync(name, Token);
+                await Downloads.DownloadAsync(name + ".json", json, Token);
+            }, Token)) _notice = "Файл бази підготовлено до завантаження.";
+        }
+        catch (JSException) { _state.SetError("Не вдалося розпочати завантаження файлу. Оновіть сторінку та спробуйте ще раз."); }
+    }
+
+    private async Task Import(InputFileChangeEventArgs args)
+    {
+        if (_state.IsBusy) return;
+        _notice = null;
+        try
+        {
+            if (args.File.Size > MaxImportSize)
+            {
+                _state.SetError("Файл завеликий. Максимальний розмір імпорту — 10 МіБ.");
+                return;
+            }
+            await using var stream = args.File.OpenReadStream(MaxImportSize, Token);
+            if (await _state.ImportAsync(stream, args.File.Name, Token)) _notice = "Базу успішно імпортовано.";
+        }
+        catch (IOException) { _state.SetError("Не вдалося прочитати вибраний файл."); }
+        catch (OperationCanceledException) when (_cancellation.IsCancellationRequested) { }
+        finally { _importVersion++; }
+    }
+
+    public void Dispose() { _cancellation.Cancel(); _cancellation.Dispose(); }
+    private enum Dialog { None, CreateDatabase, CreateTable, Row, DeleteDatabase, DeleteTable }
 }

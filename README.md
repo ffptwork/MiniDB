@@ -5,7 +5,7 @@
 - **MiniDB.Core** — моделі, типи даних, перевірки та пошук.
 - **MiniDB.Server** — REST API та зберігання баз у JSON.
 - **MiniDB.Desktop** — WPF-інтерфейс для роботи з базами, таблицями, рядками та пошуком через REST API.
-- **MiniDB.Web** — окремий Blazor WebAssembly-клієнт; наразі показує список баз через REST API.
+- **MiniDB.Web** — Blazor WebAssembly-інтерфейс для баз, таблиць, рядків, пошуку та імпорту/експорту через REST API.
 - **MiniDB.Tests** — тести ядра, файлового сховища, HTTP API, desktop API-клієнта та ViewModels.
 
 Клієнти працюють із сервером через HTTP/HTTPS REST. Сервер використовує Core; ядро не залежить від інтерфейсу чи файлового сховища.

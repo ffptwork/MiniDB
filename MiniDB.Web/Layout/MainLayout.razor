@@ -1,16 +1,11 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
+@inherits LayoutComponentBase
+
+<header class="app-header border-bottom bg-light">
+    <div class="container-fluid d-flex align-items-center gap-4 py-2 flex-wrap">
+        <a class="fs-4 fw-semibold text-decoration-none" href="">MiniDB</a>
         <NavMenu />
     </div>
-
-    <main>
-        <div class="top-row px-4">
-            <span>MiniDB — вебклієнт</span>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+</header>
+<main class="container-fluid py-4">
+    @Body
+</main>

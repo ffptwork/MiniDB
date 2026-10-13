@@ -1,0 +1,27 @@
+@using MiniDB.Web.Services
+
+<ModalDialog Title="Створити базу" Busy="@Busy" OnClose="OnClose">
+    <form @onsubmit="Submit" @onsubmit:preventDefault>
+        <fieldset disabled="@Busy">
+            <div class="modal-body">
+                @if (Error is not null) { <ApiError Message="@Error" Exception="@ApiError" /> }
+                <label for="database-name" class="form-label">Назва бази</label>
+                <input id="database-name" class="form-control" @bind="_name" required />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="OnClose">Скасувати</button>
+                <button type="submit" class="btn btn-primary">@(Busy ? "Завантаження..." : "Створити")</button>
+            </div>
+        </fieldset>
+    </form>
+</ModalDialog>
+
+@code {
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public ApiException? ApiError { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string> OnSave { get; set; }
+    private string _name = string.Empty;
+    private Task Submit() => OnSave.InvokeAsync(_name.Trim());
+}
