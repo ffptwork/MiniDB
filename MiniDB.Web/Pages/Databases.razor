@@ -1,0 +1,76 @@
+@page "/databases"
+@implements IDisposable
+@using System.Text.Json
+@using MiniDB.Web.Models
+@using MiniDB.Web.Services
+@using MiniDB.Web.Components
+@inject MiniDbApiClient Api
+
+<PageTitle>Бази даних — MiniDB</PageTitle>
+<h1>Бази даних</h1>
+
+@if (_loading)
+{
+    <p role="status">Завантаження...</p>
+}
+else if (_error is not null)
+{
+    <ApiError Message="@_error" Exception="@_apiError" />
+}
+else if (_databases.Count == 0)
+{
+    <p>На сервері ще немає баз даних.</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var database in _databases)
+        {
+            <li class="list-group-item" @key="database.Name">@database.Name</li>
+        }
+    </ul>
+}
+
+@code {
+    private readonly CancellationTokenSource _cancellation = new();
+    private IReadOnlyList<DatabaseDto> _databases = [];
+    private bool _loading = true;
+    private string? _error;
+    private ApiException? _apiError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _databases = await Api.GetDatabasesAsync(_cancellation.Token);
+        }
+        catch (OperationCanceledException) when (_cancellation.IsCancellationRequested) { }
+        catch (ApiException exception)
+        {
+            _apiError = exception;
+            _error = exception.Title;
+        }
+        catch (HttpRequestException)
+        {
+            _error = "Не вдалося підключитися до сервера. Перевірте з'єднання та доступність API.";
+        }
+        catch (OperationCanceledException)
+        {
+            _error = "Сервер не відповів вчасно. Спробуйте оновити сторінку.";
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidDataException)
+        {
+            _error = "Сервер повернув некоректну відповідь.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        _cancellation.Cancel();
+        _cancellation.Dispose();
+    }
+}

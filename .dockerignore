@@ -5,6 +5,7 @@
 .idea
 MiniDB.Desktop
 MiniDB.Tests
+MiniDB.Web
 .tools
 **/data
 TestResults

@@ -24,6 +24,14 @@ public static class ServerApplication
         }
 
         builder.Services.AddControllers();
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        builder.Services.AddCors(options => options.AddPolicy("WebClient", policy =>
+        {
+            if (allowedOrigins.Length > 0)
+                policy.WithOrigins(allowedOrigins);
+            policy.WithMethods("GET", "POST", "PUT", "DELETE")
+                .WithHeaders("Content-Type");
+        }));
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
         builder.Services.AddSingleton(serviceProvider =>
@@ -40,6 +48,7 @@ public static class ServerApplication
 
         var app = builder.Build();
         app.UseExceptionHandler();
+        app.UseCors("WebClient");
         app.UseMiddleware<DatabaseMutationMiddleware>();
         app.MapControllers();
         app.MapGet("/health", () => Results.Ok(new { status = "ok" }));

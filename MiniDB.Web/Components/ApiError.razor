@@ -1,0 +1,29 @@
+@using MiniDB.Web.Services
+
+<div class="alert alert-danger" role="alert">
+    <p class="mb-0">@Message</p>
+    @if (Exception is { } error)
+    {
+        @if (!string.IsNullOrWhiteSpace(error.Detail))
+        {
+            <p class="mb-0">@error.Detail</p>
+        }
+        @if (error.Errors.Count > 0)
+        {
+            <ul class="mb-0">
+                @foreach (var messages in error.Errors.Values)
+                {
+                    @foreach (var text in messages)
+                    {
+                        <li>@text</li>
+                    }
+                }
+            </ul>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
+    [Parameter] public ApiException? Exception { get; set; }
+}

@@ -10,6 +10,8 @@ HTTP-контракти містяться в `Contracts`, файлові DTO �
 
 Помилки повертаються у форматі ProblemDetails: 400 для некоректних даних, 404 для відсутніх об'єктів, 409 для дублікатів. Деталі внутрішніх помилок залишаються в журналі сервера. Паралельні зміни виконуються по черзі в межах одного процесу.
 
+CORS для Web налаштовано через `Cors:AllowedOrigins`: локально дозволені `http://localhost:5180` та `https://localhost:7180`. Policy дозволяє GET/POST/PUT/DELETE і заголовок Content-Type, зокрема для JSON та multipart/form-data; cookies не потрібні. У Railway origins можна задати змінними `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`. Щоб браузерний клієнт працював із Railway, потрібно оновити розгорнутий Server із цією policy.
+
 Запуск із кореня проєкту: `.\dotnet.ps1 run --project MiniDB.Server`. Локальна HTTPS-адреса — `https://localhost:7143/api/databases`.
 
 Dockerfile у корені збирає тільки Server і Core. Desktop, Tests, локальні бази та `.tools` виключені через .dockerignore. Збірка: `docker build -t minidb-server .`.
